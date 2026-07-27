@@ -27,5 +27,6 @@ public interface SubmissionSummaryProjection {
     String getProjectAccession();
 
     String getAnalysisAccessions();
+
     String getRtLink();
 }

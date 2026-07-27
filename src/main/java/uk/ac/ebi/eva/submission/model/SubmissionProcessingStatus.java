@@ -1,5 +1,5 @@
 package uk.ac.ebi.eva.submission.model;
 
 public enum SubmissionProcessingStatus {
-    READY_FOR_PROCESSING, FAILURE,  SUCCESS, RUNNING, ON_HOLD
+    ON_HOLD, READY_FOR_PROCESSING, RUNNING, FAILURE, USER_FAILURE, CANCELLED, SUCCESS
 }

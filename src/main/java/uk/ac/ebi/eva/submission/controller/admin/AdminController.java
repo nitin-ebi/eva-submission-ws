@@ -62,12 +62,7 @@ public class AdminController extends BaseController {
     @PutMapping("submission/{submissionId}/status/{status}")
     public ResponseEntity<?> markSubmissionStatus(@PathVariable("submissionId") String submissionId,
                                                   @PathVariable("status") SubmissionStatus status) {
-        try {
-            Submission submission = this.submissionService.markSubmissionStatus(submissionId, status);
-            return new ResponseEntity<>(stripUserDetails(submission), HttpStatus.OK);
-        } catch (SubmissionDoesNotExistException ex) {
-            return new ResponseEntity<>(ex.getMessage(), HttpStatus.NOT_FOUND);
-        }
+        return new ResponseEntity<>("Cannot set submission status, use processing status instead", HttpStatus.METHOD_NOT_ALLOWED);
     }
 
     @Operation(summary = "This endpoint retrieves detail of submission including the metadata json",
