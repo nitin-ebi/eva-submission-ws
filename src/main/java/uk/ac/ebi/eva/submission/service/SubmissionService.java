@@ -135,6 +135,9 @@ public class SubmissionService {
     private static Map<Pair<SubmissionProcessingStep, SubmissionProcessingStatus>, SubmissionStatus> buildStatusMapping() {
         Map<Pair<SubmissionProcessingStep, SubmissionProcessingStatus>, SubmissionStatus> statusMapping = new HashMap<>();
 
+        // VALIDATION / READY_FOR_PROCESSING corresponds to UPLOADED initially, but on subsequent runs will correspond
+        // to PROCESSING, hence the mapping here
+        statusMapping.put(Pair.of(SubmissionProcessingStep.VALIDATION, SubmissionProcessingStatus.READY_FOR_PROCESSING), SubmissionStatus.PROCESSING);
         statusMapping.put(Pair.of(SubmissionProcessingStep.VALIDATION, SubmissionProcessingStatus.RUNNING), SubmissionStatus.PROCESSING);
         statusMapping.put(Pair.of(SubmissionProcessingStep.VALIDATION, SubmissionProcessingStatus.FAILURE), SubmissionStatus.PROCESSING);
         statusMapping.put(Pair.of(SubmissionProcessingStep.VALIDATION, SubmissionProcessingStatus.USER_FAILURE), SubmissionStatus.FAILED);
