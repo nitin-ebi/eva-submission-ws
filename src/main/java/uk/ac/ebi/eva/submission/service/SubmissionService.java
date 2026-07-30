@@ -135,7 +135,6 @@ public class SubmissionService {
     private static Map<Pair<SubmissionProcessingStep, SubmissionProcessingStatus>, SubmissionStatus> buildStatusMapping() {
         Map<Pair<SubmissionProcessingStep, SubmissionProcessingStatus>, SubmissionStatus> statusMapping = new HashMap<>();
 
-        statusMapping.put(Pair.of(SubmissionProcessingStep.VALIDATION, SubmissionProcessingStatus.READY_FOR_PROCESSING), SubmissionStatus.UPLOADED);
         statusMapping.put(Pair.of(SubmissionProcessingStep.VALIDATION, SubmissionProcessingStatus.RUNNING), SubmissionStatus.PROCESSING);
         statusMapping.put(Pair.of(SubmissionProcessingStep.VALIDATION, SubmissionProcessingStatus.FAILURE), SubmissionStatus.PROCESSING);
         statusMapping.put(Pair.of(SubmissionProcessingStep.VALIDATION, SubmissionProcessingStatus.USER_FAILURE), SubmissionStatus.FAILED);
@@ -399,6 +398,7 @@ public class SubmissionService {
         return false;
     }
 
+    @Transactional
     public Submission uploadMetadataJsonAndMarkUploaded(String submissionId, String projectTitle,
                                                         String projectDescription, JsonNode metadataJson) {
         SubmissionDetails submissionDetails = new SubmissionDetails(submissionId);
@@ -410,6 +410,11 @@ public class SubmissionService {
         Submission submission = submissionRepository.findBySubmissionId(submissionId);
         submission.setStatus(SubmissionStatus.UPLOADED.toString());
         submission.setUploadedTime(LocalDateTime.now());
+
+        SubmissionProcessing submissionProc = new SubmissionProcessing(submissionId);
+        submissionProc.setStep(SubmissionProcessingStep.VALIDATION.toString());
+        submissionProc.setStatus(SubmissionProcessingStatus.READY_FOR_PROCESSING.toString());
+        submissionProcessingRepository.save(submissionProc);
 
         return submissionRepository.save(submission);
     }
@@ -492,6 +497,7 @@ public class SubmissionService {
 
     }
 
+    @Transactional
     public SubmissionProcessing markSubmissionProcessStepAndStatus(String submissionId,
                                                                    SubmissionProcessingStep step,
                                                                    SubmissionProcessingStatus status) {
