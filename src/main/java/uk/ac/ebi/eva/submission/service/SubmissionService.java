@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.util.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -78,6 +79,9 @@ public class SubmissionService {
     private static final String GLOBUS_FILE_NAME = "name";
     private static final String GLOBUS_FILE_SIZE = "size";
 
+    private static final Map<Pair<SubmissionProcessingStep, SubmissionProcessingStatus>, SubmissionStatus> STATUS_MAPPING =
+            buildStatusMapping();
+
     private final SubmissionRepository submissionRepository;
 
     private final SubmissionAccountRepository submissionAccountRepository;
@@ -126,6 +130,33 @@ public class SubmissionService {
         this.emailHelper = emailHelper;
         this.enaUtils = enaUtils;
         this.bioSamplesUtils = bioSamplesUtils;
+    }
+
+    private static Map<Pair<SubmissionProcessingStep, SubmissionProcessingStatus>, SubmissionStatus> buildStatusMapping() {
+        Map<Pair<SubmissionProcessingStep, SubmissionProcessingStatus>, SubmissionStatus> statusMapping = new HashMap<>();
+
+        // VALIDATION / READY_FOR_PROCESSING corresponds to UPLOADED initially, but on subsequent runs will correspond
+        // to PROCESSING, hence the mapping here
+        statusMapping.put(Pair.of(SubmissionProcessingStep.VALIDATION, SubmissionProcessingStatus.READY_FOR_PROCESSING), SubmissionStatus.PROCESSING);
+        statusMapping.put(Pair.of(SubmissionProcessingStep.VALIDATION, SubmissionProcessingStatus.RUNNING), SubmissionStatus.PROCESSING);
+        statusMapping.put(Pair.of(SubmissionProcessingStep.VALIDATION, SubmissionProcessingStatus.FAILURE), SubmissionStatus.PROCESSING);
+        statusMapping.put(Pair.of(SubmissionProcessingStep.VALIDATION, SubmissionProcessingStatus.USER_FAILURE), SubmissionStatus.FAILED);
+        statusMapping.put(Pair.of(SubmissionProcessingStep.VALIDATION, SubmissionProcessingStatus.SUCCESS), SubmissionStatus.PROCESSING);
+
+        statusMapping.put(Pair.of(SubmissionProcessingStep.BROKERING, SubmissionProcessingStatus.READY_FOR_PROCESSING), SubmissionStatus.PROCESSING);
+        statusMapping.put(Pair.of(SubmissionProcessingStep.BROKERING, SubmissionProcessingStatus.RUNNING), SubmissionStatus.PROCESSING);
+        statusMapping.put(Pair.of(SubmissionProcessingStep.BROKERING, SubmissionProcessingStatus.FAILURE), SubmissionStatus.PROCESSING);
+        statusMapping.put(Pair.of(SubmissionProcessingStep.BROKERING, SubmissionProcessingStatus.USER_FAILURE), SubmissionStatus.FAILED);
+        statusMapping.put(Pair.of(SubmissionProcessingStep.BROKERING, SubmissionProcessingStatus.SUCCESS), SubmissionStatus.PROCESSING);
+
+        statusMapping.put(Pair.of(SubmissionProcessingStep.INGESTION, SubmissionProcessingStatus.ON_HOLD), SubmissionStatus.ON_HOLD);
+        statusMapping.put(Pair.of(SubmissionProcessingStep.INGESTION, SubmissionProcessingStatus.READY_FOR_PROCESSING), SubmissionStatus.ON_HOLD);
+        statusMapping.put(Pair.of(SubmissionProcessingStep.INGESTION, SubmissionProcessingStatus.RUNNING), SubmissionStatus.PROCESSING);
+        statusMapping.put(Pair.of(SubmissionProcessingStep.INGESTION, SubmissionProcessingStatus.FAILURE), SubmissionStatus.PROCESSING);
+        statusMapping.put(Pair.of(SubmissionProcessingStep.INGESTION, SubmissionProcessingStatus.USER_FAILURE), SubmissionStatus.FAILED);
+        statusMapping.put(Pair.of(SubmissionProcessingStep.INGESTION, SubmissionProcessingStatus.SUCCESS), SubmissionStatus.COMPLETED);
+
+        return Collections.unmodifiableMap(statusMapping);
     }
 
     public Submission initiateSubmission(SubmissionAccount submissionAccount) {
@@ -370,6 +401,7 @@ public class SubmissionService {
         return false;
     }
 
+    @Transactional
     public Submission uploadMetadataJsonAndMarkUploaded(String submissionId, String projectTitle,
                                                         String projectDescription, JsonNode metadataJson) {
         SubmissionDetails submissionDetails = new SubmissionDetails(submissionId);
@@ -381,6 +413,11 @@ public class SubmissionService {
         Submission submission = submissionRepository.findBySubmissionId(submissionId);
         submission.setStatus(SubmissionStatus.UPLOADED.toString());
         submission.setUploadedTime(LocalDateTime.now());
+
+        SubmissionProcessing submissionProc = new SubmissionProcessing(submissionId);
+        submissionProc.setStep(SubmissionProcessingStep.VALIDATION.toString());
+        submissionProc.setStatus(SubmissionProcessingStatus.READY_FOR_PROCESSING.toString());
+        submissionProcessingRepository.save(submissionProc);
 
         return submissionRepository.save(submission);
     }
@@ -394,17 +431,35 @@ public class SubmissionService {
         return submission.getStatus();
     }
 
-    public Submission markSubmissionStatus(String submissionId, SubmissionStatus status) {
+    private void setSubmissionStatus(String submissionId,
+                                     SubmissionProcessingStep step,
+                                     SubmissionProcessingStatus processingStatus) {
         Submission submission = submissionRepository.findBySubmissionId(submissionId);
         if (submission == null) {
             throw new SubmissionDoesNotExistException(submissionId);
         }
-        submission.setStatus(status.toString());
-        if (status == SubmissionStatus.COMPLETED) {
+
+        SubmissionStatus overallStatus = null;
+        if (processingStatus == SubmissionProcessingStatus.CANCELLED) {
+            overallStatus = SubmissionStatus.CANCELLED;
+        } else {
+            Pair<SubmissionProcessingStep, SubmissionProcessingStatus> key = Pair.of(step, processingStatus);
+            if (STATUS_MAPPING.containsKey(key)) {
+                overallStatus = STATUS_MAPPING.get(Pair.of(step, processingStatus));
+            } else {
+                logger.warn("{} - {} is not a supported combination, not updating overall status. Current status: {}",
+                        step, processingStatus, submission.getStatus());
+            }
+        }
+
+        if (overallStatus != null) {
+            submission.setStatus(overallStatus.toString());
+        }
+        if (overallStatus == SubmissionStatus.COMPLETED) {
             submission.setCompletionTime(LocalDateTime.now());
         }
 
-        return submissionRepository.save(submission);
+        submissionRepository.save(submission);
     }
 
     public boolean checkUserHasAccessToSubmission(SubmissionAccount account, String submissionId) {
@@ -445,6 +500,7 @@ public class SubmissionService {
 
     }
 
+    @Transactional
     public SubmissionProcessing markSubmissionProcessStepAndStatus(String submissionId,
                                                                    SubmissionProcessingStep step,
                                                                    SubmissionProcessingStatus status) {
@@ -460,6 +516,8 @@ public class SubmissionService {
 
         submissionProc.setStep(step.toString());
         submissionProc.setStatus(status.toString());
+        setSubmissionStatus(submissionId, step, status);
+
         return submissionProcessingRepository.save(submissionProc);
     }
 

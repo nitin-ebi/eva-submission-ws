@@ -1380,48 +1380,6 @@ public class SubmissionWSIntegrationTest {
                         "It cannot be marked as UPLOADED. Current Status: UPLOADED"));
     }
 
-    @Test
-    @Transactional
-    public void testMarkSubmissionStatusCorrect() throws Exception {
-        HttpHeaders httpHeaders = new HttpHeaders();
-        httpHeaders.setBasicAuth(TEST_ADMIN_USERNAME, TEST_ADMIN_PASSWORD);
-
-        mvc.perform(put("/v1/admin/submission/" + submissionId + "/status/COMPLETED")
-                        .headers(httpHeaders)
-                        .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk());
-
-        Submission submission = submissionRepository.findBySubmissionId(submissionId);
-        assertThat(submission).isNotNull();
-        assertThat(submission.getSubmissionId()).isEqualTo(submissionId);
-        assertThat(submission.getStatus()).isEqualTo(SubmissionStatus.COMPLETED.toString());
-        assertThat(submission.getCompletionTime()).isNotNull();
-    }
-
-    @Test
-    @Transactional
-    public void testMarkSubmissionStatusWrong() throws Exception {
-        HttpHeaders httpHeaders = new HttpHeaders();
-        httpHeaders.setBasicAuth(TEST_ADMIN_USERNAME, TEST_ADMIN_PASSWORD);
-        mvc.perform(put("/v1/admin/submission/" + submissionId + "/status/complete")
-                        .headers(httpHeaders)
-                        .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    @Transactional
-    public void testMarkSubmissionStatusSubmissionDoesNotExist() throws Exception {
-        String submissionId = "test-wrong-submission-id";
-
-        HttpHeaders httpHeaders = new HttpHeaders();
-        httpHeaders.setBasicAuth(TEST_ADMIN_USERNAME, TEST_ADMIN_PASSWORD);
-        mvc.perform(put("/v1/admin/submission/" + submissionId + "/status/COMPLETED")
-                        .headers(httpHeaders)
-                        .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isNotFound())
-                .andExpect(content().string("Submission with id " + submissionId + " does not exist"));
-    }
 
     @Test
     @Transactional
@@ -1484,6 +1442,10 @@ public class SubmissionWSIntegrationTest {
         assertThat(submissionProc.getStep()).isEqualTo(SubmissionProcessingStep.VALIDATION.toString());
         assertThat(submissionProc.getStatus()).isEqualTo(SubmissionProcessingStatus.SUCCESS.toString());
         assertThat(submissionProc.getLastUpdateTime()).isNotNull();
+
+        Submission submission = submissionRepository.findBySubmissionId(submissionId1);
+        assertThat(submission).isNotNull();
+        assertThat(submission.getStatus()).isEqualTo(SubmissionStatus.PROCESSING.toString());
     }
 
     @Test
@@ -1504,6 +1466,10 @@ public class SubmissionWSIntegrationTest {
         assertThat(submissionProc.getStep()).isEqualTo(SubmissionProcessingStep.VALIDATION.toString());
         assertThat(submissionProc.getStatus()).isEqualTo(SubmissionProcessingStatus.SUCCESS.toString());
         assertThat(submissionProc.getLastUpdateTime()).isNotNull();
+
+        Submission submission = submissionRepository.findBySubmissionId(submissionId);
+        assertThat(submission).isNotNull();
+        assertThat(submission.getStatus()).isEqualTo(SubmissionStatus.PROCESSING.toString());
     }
 
     @Test
@@ -1520,6 +1486,58 @@ public class SubmissionWSIntegrationTest {
                 .andExpect(content().string("Submission with id " + submissionId + " does not exist"));
     }
 
+    @Test
+    @Transactional
+    public void testMarkSubmissionProcessStepAndStatus_Cancelled() throws Exception {
+        HttpHeaders httpHeaders = new HttpHeaders();
+        httpHeaders.setBasicAuth(TEST_ADMIN_USERNAME, TEST_ADMIN_PASSWORD);
+        mvc.perform(put("/v1/admin/submission-process/" + submissionId + "/" + SubmissionProcessingStep.VALIDATION + "/" + SubmissionProcessingStatus.CANCELLED)
+                        .headers(httpHeaders)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
+
+        Submission submission = submissionRepository.findBySubmissionId(submissionId);
+        assertThat(submission).isNotNull();
+        assertThat(submission.getStatus()).isEqualTo(SubmissionStatus.CANCELLED.toString());
+    }
+
+    @Test
+    @Transactional
+    public void testMarkSubmissionProcessStepAndStatus_Completed() throws Exception {
+        HttpHeaders httpHeaders = new HttpHeaders();
+        httpHeaders.setBasicAuth(TEST_ADMIN_USERNAME, TEST_ADMIN_PASSWORD);
+        mvc.perform(put("/v1/admin/submission-process/" + submissionId + "/" + SubmissionProcessingStep.INGESTION + "/" + SubmissionProcessingStatus.SUCCESS)
+                        .headers(httpHeaders)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
+
+        Submission submission = submissionRepository.findBySubmissionId(submissionId);
+        assertThat(submission).isNotNull();
+        assertThat(submission.getStatus()).isEqualTo(SubmissionStatus.COMPLETED.toString());
+        assertThat(submission.getCompletionTime()).isNotNull();
+    }
+
+    @Test
+    @Transactional
+    public void testMarkSubmissionProcessStepAndStatus_UnsupportedCombination() throws Exception {
+        HttpHeaders httpHeaders = new HttpHeaders();
+        httpHeaders.setBasicAuth(TEST_ADMIN_USERNAME, TEST_ADMIN_PASSWORD);
+        mvc.perform(put("/v1/admin/submission-process/" + submissionId + "/" + SubmissionProcessingStep.VALIDATION + "/" + SubmissionProcessingStatus.ON_HOLD)
+                        .headers(httpHeaders)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
+
+        // Overall submission status is unchanged
+        Submission submission = submissionRepository.findBySubmissionId(submissionId);
+        assertThat(submission).isNotNull();
+        assertThat(submission.getStatus()).isEqualTo(SubmissionStatus.OPEN.toString());
+
+        // Processing step and status are still updated
+        SubmissionProcessing submissionProc = submissionProcessingRepository.findBySubmissionId(submissionId);
+        assertThat(submissionProc).isNotNull();
+        assertThat(submissionProc.getStep()).isEqualTo(SubmissionProcessingStep.VALIDATION.toString());
+        assertThat(submissionProc.getStatus()).isEqualTo(SubmissionProcessingStatus.ON_HOLD.toString());
+    }
 
     @Test
     @Transactional

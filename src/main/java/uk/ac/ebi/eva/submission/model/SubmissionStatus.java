@@ -1,6 +1,5 @@
 package uk.ac.ebi.eva.submission.model;
 
 public enum SubmissionStatus {
-    OPEN, UPLOADED, COMPLETED, TIMEOUT, FAILED, CANCELLED, PROCESSING
-
+    OPEN, UPLOADED, PROCESSING, ON_HOLD, FAILED, TIMEOUT, CANCELLED, COMPLETED
 }
