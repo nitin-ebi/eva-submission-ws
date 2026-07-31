@@ -11,7 +11,7 @@
 
     <groupId>uk.ac.ebi.eva</groupId>
     <artifactId>eva-submission-ws</artifactId>
-    <version>0.0.18</version>
+    <version>0.0.19-SNAPSHOT</version>
     <packaging>war</packaging>
     <name>eva-submission-ws</name>
     <description>eva-submission-ws</description>
