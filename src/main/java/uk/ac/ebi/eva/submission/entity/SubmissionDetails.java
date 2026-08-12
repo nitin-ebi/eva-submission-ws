@@ -1,19 +1,17 @@
 package uk.ac.ebi.eva.submission.entity;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import io.hypersistence.utils.hibernate.type.json.JsonType;
-import org.hibernate.annotations.TypeDef;
-
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.OneToOne;
-import javax.persistence.PrimaryKeyJoinColumn;
-import javax.persistence.Table;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.PrimaryKeyJoinColumn;
+import jakarta.persistence.Table;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(schema = "eva_submissions", name = "submission_details")
-@TypeDef(typeClass = JsonType.class, defaultForType = JsonNode.class)
 public class SubmissionDetails {
     public static final int PROJECT_TITLE_LENGTH = 500;
     public static final int PROJECT_DESCRIPTION_LENGTH = 5000;
@@ -32,6 +30,7 @@ public class SubmissionDetails {
     @Column(nullable = false, name = "project_description", length = PROJECT_DESCRIPTION_LENGTH)
     private String projectDescription;
 
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb", name = "metadata_json", nullable = false)
     private JsonNode metadataJson;
 

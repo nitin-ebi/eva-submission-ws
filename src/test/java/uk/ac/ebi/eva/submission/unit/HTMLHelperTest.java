@@ -3,7 +3,7 @@ package uk.ac.ebi.eva.submission.unit;
 import org.junit.jupiter.api.Test;
 import uk.ac.ebi.eva.submission.util.HTMLHelper;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class HTMLHelperTest {
 

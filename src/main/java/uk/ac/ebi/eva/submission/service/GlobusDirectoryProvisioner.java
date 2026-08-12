@@ -59,7 +59,7 @@ public class GlobusDirectoryProvisioner {
         HttpEntity<String> requestEntity = new HttpEntity<>(requestBody, headers);
 
         ResponseEntity<String> response = restTemplate.exchange(transferApiUrl, HttpMethod.POST, requestEntity,
-                                                                String.class);
+                String.class);
 
         // Check the response status and handle errors if necessary
         if (response.getStatusCode().is2xxSuccessful()) {

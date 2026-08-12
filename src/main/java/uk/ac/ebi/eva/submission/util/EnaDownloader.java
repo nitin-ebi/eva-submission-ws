@@ -15,10 +15,9 @@ import java.util.regex.Pattern;
 
 @Component
 public class EnaDownloader {
-    private final RestTemplate restTemplate;
-
     private static final String ENA_BASE_URL = "https://www.ebi.ac.uk/ena/browser/api/xml/";
     private static final Pattern ENA_ACCESSION = Pattern.compile("^[A-Z]{1,6}[0-9]{1,9}$");
+    private final RestTemplate restTemplate;
 
     public EnaDownloader(RestTemplate restTemplate) {
         this.restTemplate = restTemplate;

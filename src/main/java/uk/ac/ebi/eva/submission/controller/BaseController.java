@@ -43,7 +43,7 @@ public class BaseController {
         return submissionAccount;
     }
 
-    public List<Submission> stripUserDetails(List<Submission> submissions){
+    public List<Submission> stripUserDetails(List<Submission> submissions) {
         return submissions.stream().map(this::stripUserDetails).collect(Collectors.toList());
     }
 

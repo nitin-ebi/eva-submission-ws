@@ -22,7 +22,7 @@ public class HTMLHelper {
     }
 
     public HTMLHelper addGap(int count) {
-        htmlBuilder.append(IntStream.range(0, count+1).boxed().map(i -> "<br />").collect(Collectors.joining("")));
+        htmlBuilder.append(IntStream.range(0, count + 1).boxed().map(i -> "<br />").collect(Collectors.joining("")));
         return this;
     }
 
