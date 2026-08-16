@@ -1,15 +1,15 @@
 package uk.ac.ebi.eva.submission.entity;
 
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.Table;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.envers.Audited;
 import org.springframework.lang.NonNull;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.OneToOne;
-import javax.persistence.Table;
 import java.time.LocalDateTime;
 import java.util.Objects;
 
@@ -19,14 +19,6 @@ import static org.hibernate.envers.RelationTargetAuditMode.NOT_AUDITED;
 @Audited(targetAuditMode = NOT_AUDITED)
 @Table(schema = "eva_submissions", name = "submission_processing_status")
 public class SubmissionProcessing {
-
-    public SubmissionProcessing() {
-
-    }
-
-    public SubmissionProcessing(String submissionId) {
-        this.submissionId = submissionId;
-    }
 
     @Id
     @NonNull
@@ -52,6 +44,14 @@ public class SubmissionProcessing {
     @Column(nullable = false)
     @UpdateTimestamp
     private LocalDateTime lastUpdateTime;
+
+    public SubmissionProcessing() {
+
+    }
+
+    public SubmissionProcessing(String submissionId) {
+        this.submissionId = submissionId;
+    }
 
     public String getSubmissionId() {
         return submissionId;

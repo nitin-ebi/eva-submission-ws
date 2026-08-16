@@ -9,10 +9,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 @Configuration
-public class SwaggerConfig extends WebMvcConfigurerAdapter {
+public class SwaggerConfig implements WebMvcConfigurer {
 
     @Autowired
     private SwaggerInterceptAdapter interceptAdapter;

@@ -16,12 +16,12 @@ import org.springframework.web.client.RestTemplate;
 import uk.ac.ebi.eva.submission.repository.CallHomeEventRepository;
 import uk.ac.ebi.eva.submission.util.SchemaDownloader;
 
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @SpringBootTest(classes = {SchemaDownloader.class, CacheConfig.class})
 @EnableCaching

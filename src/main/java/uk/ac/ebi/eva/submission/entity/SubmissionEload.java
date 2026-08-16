@@ -1,17 +1,28 @@
 package uk.ac.ebi.eva.submission.entity;
 
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import org.springframework.lang.NonNull;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Table;
 import java.util.Objects;
 
 
 @Entity
 @Table(schema = "eva_submissions", name = "submission_eload")
 public class SubmissionEload {
+
+    @Id
+    @NonNull
+    @Column(nullable = false, name = "submission_id")
+    private String submissionId;
+    @NonNull
+    @Column(nullable = false, unique = true)
+    private Integer eload;
+    @NonNull
+    @Column(nullable = false)
+    private String source;
 
     public SubmissionEload() {
 
@@ -22,19 +33,6 @@ public class SubmissionEload {
         this.eload = eload;
         this.source = source;
     }
-
-    @Id
-    @NonNull
-    @Column(nullable = false, name = "submission_id")
-    private String submissionId;
-
-    @NonNull
-    @Column(nullable = false, unique = true)
-    private Integer eload;
-
-    @NonNull
-    @Column(nullable = false)
-    private String source;
 
     public String getSubmissionId() {
         return submissionId;

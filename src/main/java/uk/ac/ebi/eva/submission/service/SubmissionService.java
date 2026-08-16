@@ -40,9 +40,9 @@ import uk.ac.ebi.eva.submission.util.EnaUtils;
 import uk.ac.ebi.eva.submission.util.MailSender;
 import uk.ac.ebi.eva.submission.util.Utils;
 
+import java.net.URI;
 import java.nio.file.Paths;
 import java.time.LocalDate;
-import java.net.URI;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;

@@ -1,14 +1,13 @@
 package uk.ac.ebi.eva.submission.controller.swagger;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-import org.springframework.web.servlet.handler.HandlerInterceptorAdapter;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import org.springframework.web.servlet.HandlerInterceptor;
 
 @Component
-public class SwaggerInterceptAdapter extends HandlerInterceptorAdapter {
+public class SwaggerInterceptAdapter implements HandlerInterceptor {
 
     @Value("${server.servlet.context-path:/}")
     private String contextPath;
@@ -26,6 +25,6 @@ public class SwaggerInterceptAdapter extends HandlerInterceptorAdapter {
             return false;
         }
 
-        return super.preHandle(request, response, handler);
+        return true;
     }
 }

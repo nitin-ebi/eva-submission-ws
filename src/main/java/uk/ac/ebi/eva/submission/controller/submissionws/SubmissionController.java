@@ -126,7 +126,7 @@ public class SubmissionController extends BaseController {
             logger.warn("Mark submission uploaded failed for submissionId {}: user {} does not have access to this submission",
                     submissionId, submissionAccount.getId());
             return new ResponseEntity<>("Unauthorized: Account " + submissionAccount.getId() +
-                                        " does not have access to submissionId " + submissionId, HttpStatus.UNAUTHORIZED);
+                    " does not have access to submissionId " + submissionId, HttpStatus.UNAUTHORIZED);
         }
         logger.info("Mark submission uploaded: authenticated user {} for submissionId {}", submissionAccount.getId(), submissionId);
 
