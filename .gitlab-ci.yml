@@ -1,4 +1,5 @@
 stages:
+  - test
   - build
   - deploy
 
@@ -16,6 +17,27 @@ variables:
 # DOCKER_AUTH_CONFIG: Contains username and password for the docker registry above
 # GITHUB_USER: GitHub username for accessing private maven settings repository
 # GITHUB_TOKEN: GitHub personal access token for accessing private maven settings repository
+
+# ============================================================================
+# Test
+# ============================================================================
+
+test:
+  stage: test
+  image: maven:3.9-eclipse-temurin-21-alpine
+  services:
+    - docker:dind
+  variables:
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_TLS_CERTDIR: ""
+    DOCKER_DRIVER: overlay2
+  script:
+    - mvn -B clean test
+  environment:
+    name: test-env
+  only:
+    - master
+    - tags
 #
 # ============================================================================
 # Base Job Templates
