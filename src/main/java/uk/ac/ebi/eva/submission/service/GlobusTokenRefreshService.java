@@ -40,9 +40,18 @@ public class GlobusTokenRefreshService {
     public String getAccessToken() {
         accessTokenLock.readLock().lock();
         try {
-            if(Objects.isNull(accessToken) || accessToken.isEmpty()) {
-                refreshToken();
+            if (!Objects.isNull(accessToken) && !accessToken.isEmpty()) {
+                return accessToken;
             }
+        } finally {
+            accessTokenLock.readLock().unlock();
+        }
+
+        // Refresh outside the read lock so the write lock can be acquired safely.
+        refreshToken();
+
+        accessTokenLock.readLock().lock();
+        try {
             return accessToken;
         } finally {
             accessTokenLock.readLock().unlock();
@@ -85,7 +94,12 @@ public class GlobusTokenRefreshService {
         try {
             ObjectMapper objectMapper = new ObjectMapper();
             JsonNode responseJson = objectMapper.readTree(response.getBody());
-            setAccessToken(responseJson.get("access_token").asText());
+            accessTokenLock.writeLock().lock();
+            try {
+                accessToken = responseJson.get("access_token").asText();
+            } finally {
+                accessTokenLock.writeLock().unlock();
+            }
         } catch (Exception e) {
             // Handle errors while parsing the response JSON
             e.printStackTrace();
