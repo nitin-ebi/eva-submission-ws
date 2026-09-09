@@ -179,6 +179,18 @@ public class SubmissionService {
         return submissionRepository.save(submission);
     }
 
+    public Submission initiateSubmissionByEVA() {
+        String submissionId = UUID.randomUUID().toString();
+
+        Optional<SubmissionAccount> optSubmissionAccount = submissionAccountRepository.findById(evaSubmissionAccount);
+        Submission submission = new Submission(submissionId);
+        submission.setSubmissionAccount(optSubmissionAccount.get());
+        submission.setStatus(SubmissionStatus.OPEN.toString());
+        submission.setInitiationTime(LocalDateTime.now());
+
+        return submissionRepository.save(submission);
+    }
+
     @Transactional
     public String getOrGenerateSubmissionIdForEload(Integer eload, String source) {
         SubmissionEload submissionEload = submissionEloadRepository.findByEload(eload);
