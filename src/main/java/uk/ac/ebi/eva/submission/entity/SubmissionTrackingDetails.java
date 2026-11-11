@@ -43,12 +43,8 @@ public class SubmissionTrackingDetails {
     private String metadataJsonFile;
 
     @OneToMany(cascade = CascadeType.REMOVE)
-    @JoinTable(name = "submission_submitted_analysis",
-            joinColumns = @JoinColumn(name = "submission_id", insertable = false, updatable = false),
-            inverseJoinColumns = {
-                    @JoinColumn(name = "submission_id", insertable = false, updatable = false),
-                    @JoinColumn(name = "analysis_alias", insertable = false, updatable = false)
-            })
+    @JoinColumn(name = "submission_id", referencedColumnName = "submission_id",
+            insertable = false, updatable = false)
     private List<SubmittedAnalysis> analyses;
 
     @Column(name = "rt_link", nullable = true)

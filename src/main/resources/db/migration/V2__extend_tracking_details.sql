@@ -80,3 +80,7 @@ SELECT submission_id, analysis_accessions
 FROM eva_submissions.submission_tracking_details_analysis_accessions
 WHERE analysis_accessions IS NOT NULL
 ON CONFLICT (submission_id, analysis_alias) DO NOTHING;
+
+
+DROP TABLE eva_submissions.submitted_analysis_submitted_vcf;
+DROP TABLE eva_submissions.submission_submitted_analysis;

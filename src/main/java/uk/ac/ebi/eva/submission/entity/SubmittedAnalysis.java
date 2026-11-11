@@ -5,6 +5,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.IdClass;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinColumns;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.OneToMany;
@@ -45,16 +46,12 @@ public class SubmittedAnalysis {
     private String assemblyAccession;
 
     @OneToMany(cascade = CascadeType.REMOVE)
-    @JoinTable(name = "submitted_analysis_submitted_vcf",
-            joinColumns = {
-                    @JoinColumn(name = "submission_id", insertable = false, updatable = false),
-                    @JoinColumn(name = "analysis_alias", insertable = false, updatable = false)
-            },
-            inverseJoinColumns = {
-                    @JoinColumn(name = "submission_id", insertable = false, updatable = false),
-                    @JoinColumn(name = "analysis_alias", insertable = false, updatable = false),
-                    @JoinColumn(name = "submitted_file", insertable = false, updatable = false)
-            })
+    @JoinColumns({
+            @JoinColumn(name = "submission_id", referencedColumnName = "submission_id",
+                    insertable = false, updatable = false),
+            @JoinColumn(name = "analysis_alias", referencedColumnName = "analysis_alias",
+                    insertable = false, updatable = false)
+    })
     private List<SubmittedVcf> vcfs;
 
     @ManyToMany

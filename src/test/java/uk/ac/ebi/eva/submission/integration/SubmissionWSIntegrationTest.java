@@ -2384,6 +2384,84 @@ public class SubmissionWSIntegrationTest {
                 .andExpect(status().isTooManyRequests());
     }
 
+    @Test
+    @Transactional
+    public void testSetTrackingDetails_clientProcessingSequence() throws Exception {
+        ObjectMapper mapper = new ObjectMapper();
+
+        // Preparation
+        ObjectNode preparation = mapper.createObjectNode()
+                .put("metadataJsonFile", "/sub/metadata.json")
+                .put("projectTitle", "Title")
+                .put("projectTaxonomies", "9606");
+        ObjectNode prepAnalysis = preparation.putArray("analyses").addObject()
+                .put("analysisAlias", "sub_a1")
+                .put("assemblyAccession", "GCA_000001405.15");
+        prepAnalysis.putArray("vcfs").addObject().put("submittedFile", "/sub/1.vcf.gz");
+        performTrackingUpdate(mapper, preparation).andExpect(status().isOk());
+
+        // Validation: only the aggregation type, must not drop what preparation stored
+        ObjectNode validation = mapper.createObjectNode();
+        validation.putArray("analyses").addObject()
+                .put("analysisAlias", "sub_a1")
+                .put("aggregationType", "basic");
+        performTrackingUpdate(mapper, validation).andExpect(status().isOk());
+
+        // Brokering: ENA results
+        ObjectNode ena = mapper.createObjectNode()
+                .put("projectAccession", "PRJEB0001")
+                .put("releaseDate", "2030-01-01");
+        ena.putArray("analysisAccessions").add("ERZ0000001");
+        ena.putArray("analyses").addObject()
+                .put("analysisAlias", "sub_a1")
+                .put("analysisAccession", "ERZ0000001");
+        performTrackingUpdate(mapper, ena).andExpect(status().isOk());
+
+        // Brokering: prepared VCF, merged into the VCF created by preparation
+        ObjectNode brokeredVcf = mapper.createObjectNode();
+        brokeredVcf.putArray("analyses").addObject()
+                .put("analysisAlias", "sub_a1")
+                .putArray("vcfs").addObject()
+                .put("submittedFile", "/sub/1.vcf.gz")
+                .put("brokeredFile", "/sub/18_brokering/ena/1.vcf.gz")
+                .put("csiFile", "/sub/18_brokering/ena/1.csi")
+                .put("brokeredFileMd5", "md5vcf")
+                .put("csiFileMd5", "md5csi");
+        performTrackingUpdate(mapper, brokeredVcf).andExpect(status().isOk());
+
+        // Brokering: samples
+        ObjectNode samples = mapper.createObjectNode();
+        samples.putArray("analyses").addObject()
+                .put("analysisAlias", "sub_a1")
+                .putArray("samples").addObject()
+                .put("sampleName", "S1")
+                .put("sampleAccession", "SAME1");
+        performTrackingUpdate(mapper, samples).andExpect(status().isOk());
+
+        mvc.perform(get("/v1/admin/submission/" + submissionId + "/trackingDetails").headers(adminHeaders()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.projectAccession").value("PRJEB0001"))
+                .andExpect(jsonPath("$.releaseDate").value("2030-01-01"))
+                .andExpect(jsonPath("$.projectTaxonomies").value("9606"))
+                .andExpect(jsonPath("$.analyses.length()").value(1))
+                .andExpect(jsonPath("$.analyses[0].analysisAccession").value("ERZ0000001"))
+                .andExpect(jsonPath("$.analyses[0].aggregationType").value("basic"))
+                .andExpect(jsonPath("$.analyses[0].assemblyAccession").value("GCA_000001405.15"))
+                .andExpect(jsonPath("$.analyses[0].vcfs.length()").value(1))
+                .andExpect(jsonPath("$.analyses[0].vcfs[0].brokeredFile").value("/sub/18_brokering/ena/1.vcf.gz"))
+                .andExpect(jsonPath("$.analyses[0].vcfs[0].csiFileMd5").value("md5csi"))
+                .andExpect(jsonPath("$.analyses[0].samples[0].sampleAccession").value("SAME1"));
+    }
+
+    @Test
+    @Transactional
+    public void testGetTrackingDetails_noneStoredYet() throws Exception {
+        // The eva-submission client relies on this: 200 with an empty body means "nothing in the DB, use the config"
+        mvc.perform(get("/v1/admin/submission/" + submissionId + "/trackingDetails").headers(adminHeaders()))
+                .andExpect(status().isOk())
+                .andExpect(content().string(""));
+    }
+
     private static List<String> getStringList(JsonNode node) {
         if (node.isArray()) {
             return StreamSupport.stream(node.spliterator(), false)
